@@ -1130,6 +1130,9 @@
             padding: 16px;
             border-radius: 0;
             border-left: 3px solid #D4AF37;
+            display: flex;
+            flex-direction: column;
+            min-height: 100%;
         }
 
         .legend-group h4 {
@@ -1142,6 +1145,7 @@
         .legend-group ul {
             list-style: none;
             padding: 0;
+            margin: 0;
         }
 
         .legend-group li {
@@ -1154,6 +1158,20 @@
         .legend-group strong {
             color: #FFD700;
             font-weight: 600;
+        }
+
+        .legend-group .data-source-note {
+            color: #b0b0b0;
+            font-size: 0.82em;
+            line-height: 1.5;
+            margin-top: auto;
+            margin-bottom: 0;
+            padding-top: 14px;
+        }
+
+        .legend-group .data-source-note strong {
+            color: #b0b0b0;
+            font-weight: 700;
         }
 
         .footer {
@@ -1795,6 +1813,9 @@
                             </div>
                         </div>
                     </div>
+                    <p style="color: #b0b0b0; font-size: 0.82em; margin-top: 18px; margin-bottom: 0;">
+                        <strong>Data Source:</strong> MSA-level data derived from U.S. Census Bureau datasets
+                    </p>
                 </div>
                 
                 <!-- Housing Affordability Index -->
@@ -1809,6 +1830,9 @@
                             </div>
                         </div>
                     </div>
+                    <p style="color: #b0b0b0; font-size: 0.82em; margin-top: 18px; margin-bottom: 0;">
+                        <strong>Data Source:</strong> MSA-level data derived from U.S. Census Bureau datasets
+                    </p>
                 </div>
                 
                 <!-- Supply Demand Index -->
@@ -1829,6 +1853,9 @@
                             </div>
                         </div>
                     </div>
+                    <p style="color: #b0b0b0; font-size: 0.82em; margin-top: 18px; margin-bottom: 0;">
+                        <strong>Data Source:</strong> MSA-level data derived from U.S. Census Bureau datasets
+                    </p>
                 </div>
                 
                 <!-- Pricing Power Index -->
@@ -1841,6 +1868,9 @@
                             \[ \text{Rent Growth} = \frac{\text{Rent}_{t} - \text{Rent}_{t-1}}{\text{Rent}_{t-1}} \]
                         </div>
                     </div>
+                    <p style="color: #b0b0b0; font-size: 0.82em; margin-top: 18px; margin-bottom: 0;">
+                        <strong>Data Source:</strong> MSA-level data derived from U.S. Census Bureau datasets
+                    </p>
                 </div>
                 
                 <!-- Valuation Index -->
@@ -1853,6 +1883,9 @@
                             \[ \text{Value Creation} =  \text{Annual Rent} \times (1 - \text{Operating Expenditure Ratio}) \times \left(\frac{1}{\text{MF Cap Rate}} - \frac{1}{\text{Hotel Cap Rate}}\right) \]
                         </div>
                     </div>
+                    <p style="color: #b0b0b0; font-size: 0.82em; margin-top: 18px; margin-bottom: 0; line-height: 1.5;">
+                        <strong>Data Source:</strong> MSA-level Annual rent inputs are derived from U.S. Census Bureau datasets. State-level cap rates and operating expenditure ratios are compiled from publicly available market data and industry reports, curated via Gemini-assisted prompt engineering
+                    </p>
                 </div>
                 
                 <!-- Regulatory Market Index -->
@@ -1890,12 +1923,8 @@
                             </table>
                         </div>
                     </div>
-                </div>
-                
-                <!-- Data Sources -->
-                <div style="background: #333333; padding: 12px; border-radius: 0; border-left: 4px solid #D4AF37;">
-                    <p style="color: #b0b0b0; font-size: 0.85em;">
-                        <strong style="color: #FFD700;">Data Sources:</strong> U.S. Census Bureau, Industry Reports, Market Data
+                    <p style="color: #b0b0b0; font-size: 0.82em; margin-top: 18px; margin-bottom: 0; line-height: 1.5;">
+                        <strong>Data Source:</strong> State-level hotel conversion relevance ratings are based on policy and execution feasibility for hotel-to-multifamily conversion, synthesized from public policy materials via Gemini-assisted prompt engineering
                     </p>
                 </div>
             </div>
@@ -1926,6 +1955,7 @@
                         <li><strong>Pop Growth</strong> - Year-over-year population change (%)</li>
                         <li><strong>Income Growth</strong> - Year-over-year income change (%)</li>
                     </ul>
+                    <p class="data-source-note"><strong>Data Source:</strong> U.S. Census Bureau and datasets</p>
                 </div>
                 
                 <div class="legend-group">
@@ -1933,6 +1963,7 @@
                     <ul>
                         <li><strong>Rent/Income</strong> - Monthly rent / monthly income (%)</li>
                     </ul>
+                    <p class="data-source-note"><strong>Data Source:</strong> U.S. Census Bureau datasets</p>
                 </div>
                 
                 <div class="legend-group">
@@ -1941,6 +1972,7 @@
                         <li><strong>New Multi-Units</strong> - Year-over-year increase in multi-family units</li>
                         <li><strong>Vacancy Rate</strong> - Vacant units / total housing units (%)</li>
                     </ul>
+                    <p class="data-source-note"><strong>Data Source:</strong> U.S. Census Bureau datasets</p>
                 </div>
                 
                 <div class="legend-group">
@@ -1948,6 +1980,7 @@
                     <ul>
                         <li><strong>Rent Growth</strong> - Year-over-year rent change (%)</li>
                     </ul>
+                    <p class="data-source-note"><strong>Data Source:</strong> U.S. Census Bureau datasets</p>
                 </div>
                 
                 <div class="legend-group">
@@ -1955,6 +1988,7 @@
                     <ul>
                         <li><strong>Value Creation</strong> - (Annual Rent × (1 - OPEX%))*(1 / MF Cap Rate - 1 / Hotel Cap Rate) ($)</li>
                     </ul>
+                    <p class="data-source-note"><strong>Data Source:</strong> Annual rent inputs are derived from U.S. Census Bureau datasets. MSA-level cap rates and operating expenditure ratios are compiled from publicly available market data and industry reports, curated via Gemini-assisted prompt engineering</p>
                 </div>
                 
                 <div class="legend-group">
@@ -1962,6 +1996,7 @@
                     <ul>
                         <li><strong>Hotel Conversion Relevance</strong> - Mapped score from Conversion Category</li>
                     </ul>
+                    <p class="data-source-note"><strong>Data Source:</strong> State-level hotel conversion relevance ratings are based on policy and execution feasibility for hotel-to-multifamily conversion, synthesized from public policy materials via Gemini-assisted prompt engineering</p>
                 </div>
             </div>
 
@@ -2019,7 +2054,7 @@
 
                 <div style="background: #333333; padding: 12px; border-radius: 0; border-left: 4px solid #D4AF37;">
                     <p style="color: #b0b0b0; font-size: 0.85em;">
-                        <strong style="color: #FFD700;">Data Sources:</strong> Industry Reports, Market Data
+                        <strong style="color: #FFD700;">Data Sources:</strong> Publicly available information retrieved via Gemini AI
                     </p>
                 </div>
             </div>
