@@ -2504,9 +2504,9 @@
         // ...existing code...
         async function loadData() {
             try {
-                // index.html 位于 /docs，所以这里请按你的 JSON 实际位置选择：
-                // 如果文件在 /docs/data/sample_data.json，用 './data/sample_data.json'
-                // 如果文件在 /data/sample_data.json，用 '../data/sample_data.json'
+                // index.html is under /docs, so choose the JSON path based on where your file is located:
+                // If the file is /docs/data/sample_data.json, use './data/sample_data.json'
+                // If the file is /data/sample_data.json, use '../data/sample_data.json'
                 const res = await fetch(withBuildVersion('./data/sample_data.json'), { cache: 'no-store' });
 
                 if (!res.ok) {
@@ -2517,7 +2517,7 @@
                 allMSAs = Array.isArray(data?.msas) ? data.msas : [];
 
                 if (!allMSAs.length) {
-                    throw new Error('sample_data.json 中没有 msas 数组');
+                    throw new Error('No msas array found in sample_data.json');
                 }
 
                 calculateScores();
@@ -4594,8 +4594,8 @@ Rules: 4-5 projects (prioritize announced or started in 2024-2025, then 2023-202
             const payload = { contents:[{parts:[{text:prompt}]}], generationConfig:{temperature:0.6,maxOutputTokens:65536} };
             const modelFamilies = {
                 'family-2.5': ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.5-pro'],
-                'family-3': ['gemini-3.0-flash', 'gemini-3-flash', 'gemini-3.0-pro', 'gemini-3-pro'],
-                'family-3.1': ['gemini-3.1-pro', 'gemini-3.1-flash', 'gemini-3-1-pro', 'gemini-3-1-flash']
+                'family-3': ['gemini-3-flash-preview', 'gemini-3-pro-preview'],
+                'family-3.1': ['gemini-3.1-pro-preview', 'gemini-3-flash-preview']
             };
             const selected = RZI_model || 'family-2.5';
             const requestedModels = modelFamilies[selected] || [selected, 'gemini-2.5-flash'];
@@ -4619,42 +4619,66 @@ Rules: 4-5 projects (prioritize announced or started in 2024-2025, then 2023-202
             let lastStatus = 0;
             const attemptedModels = [];
 
+            let lastError = '';
             for (const modelName of modelsToTry) {
                 attemptedModels.push(modelName);
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 180000);
+                const timeoutId = setTimeout(() => controller.abort(), 60000);
+                const apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/' + modelName + ':generateContent?key=' + cleanKey;
+                console.log('[ReZone Intel] Calling model:', modelName);
                 try {
-                    res = await fetch(
-                        'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(modelName) + ':generateContent?key=' + encodeURIComponent(cleanKey),
-                        {
-                            method:'POST',
-                            headers:{'Content-Type':'application/json'},
-                            body: JSON.stringify(payload),
-                            signal: controller.signal
-                        }
-                    );
+                    res = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload),
+                        signal: controller.signal
+                    });
                     clearTimeout(timeoutId);
+                    console.log('[ReZone Intel] Status:', res.status, 'for', modelName);
                     if (res.ok) break;
                     lastStatus = res.status;
-                    if (lastStatus === 400 || lastStatus === 404) {
-                        break;
+                    try {
+                        const errBody = await res.clone().json();
+                        lastError = errBody?.error?.message || ('HTTP ' + res.status);
+                        console.warn('[ReZone Intel] API error:', lastError);
+                    } catch(_) {}
+                    if (lastStatus === 400 || lastStatus === 404 || lastStatus === 401 || lastStatus === 403) {
+                        // For 404 (model not found), keep trying next model in family
+                        if (lastStatus !== 404) break;
                     }
                 } catch (fetchErr) {
                     clearTimeout(timeoutId);
-                    lastStatus = fetchErr.name === 'AbortError' ? 408 : 0;
-                    if (lastStatus === 408) break;
+                    console.error('[ReZone Intel] Fetch threw:', fetchErr.name, fetchErr.message);
+                    if (fetchErr.name === 'AbortError') {
+                        lastStatus = 408;
+                        lastError = 'Timeout on ' + modelName;
+                        break;
+                    } else {
+                        lastStatus = 0;
+                        lastError = fetchErr.message || 'Network error';
+                    }
                 }
             }
             clearInterval(tick);
             if (!res || !res.ok) {
-                let detail = 'HTTP ' + (res?.status || lastStatus || 'unknown');
-                if (!res) {
-                    detail = lastStatus === 408
-                        ? 'Request timed out (3 minutes). Check your internet connection.'
-                        : 'All model requests failed. Check your API key and internet connection.';
+                let detail;
+                if (!res && lastStatus === 0) {
+                    detail = 'Network request blocked. Try testing on your deployed GitHub Pages site (not the local preview).';
+                } else if (lastStatus === 408) {
+                    detail = 'Request timed out. ' + lastError;
+                } else if (lastStatus === 401 || lastStatus === 403) {
+                    detail = 'API key invalid or unauthorized. ' + lastError;
+                } else if (lastStatus === 429) {
+                    detail = 'Rate limit reached on free tier. Wait a minute and try again.';
+                } else if (res) {
+                    try {
+                        const e = await res.json();
+                        detail = e?.error?.message || ('HTTP ' + res.status);
+                    } catch(_) {
+                        detail = 'HTTP ' + res.status;
+                    }
                 } else {
-                    const e = await res.json().catch(() => ({}));
-                    detail = e?.error?.message || detail;
+                    detail = lastError || ('HTTP ' + lastStatus);
                 }
                 throw new Error(detail + ' (Tried: ' + attemptedModels.join(', ') + ')');
             }
