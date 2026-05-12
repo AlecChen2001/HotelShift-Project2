@@ -1602,7 +1602,7 @@
                 <div id="heatMapStateDetails" class="heatmap-state-panel"></div>
             </div>
             
-            <h2>Top 20 MSAs Ranking</h2>
+            <h2>All MSAs Ranking</h2>
             <div class="table-container">
                 <table id="rankingTable" class="ranking-table">
                     <thead>
@@ -1611,6 +1611,12 @@
                             <th>MSA Name</th>
                             <th>Population</th>
                             <th>Score</th>
+                            <th id="thEconomicContribution">Economic Contribution<br><small>(Weight 20% | Max 20.00)</small></th>
+                            <th id="thStabilityContribution">Affordability Contribution<br><small>(Weight 15% | Max 15.00)</small></th>
+                            <th id="thSupplyContribution">Supply Contribution<br><small>(Weight 15% | Max 15.00)</small></th>
+                            <th id="thPricingContribution">Pricing Contribution<br><small>(Weight 15% | Max 15.00)</small></th>
+                            <th id="thValuationContribution">Valuation Contribution<br><small>(Weight 15% | Max 15.00)</small></th>
+                            <th id="thRegulatoryContribution">Regulatory Contribution<br><small>(Weight 20% | Max 20.00)</small></th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -3029,12 +3035,68 @@
 
         function renderRankingTable() {
             const tbody = document.getElementById('tableBody');
+            const setContributionHeader = (headerId, label, weight, adjustedMax) => {
+                const th = document.getElementById(headerId);
+                if (!th) return;
+                const weightPct = (weight * 100).toFixed(0);
+                th.innerHTML = `${label}<br><small>(Weight ${weightPct}% | Max (Adj) ${adjustedMax.toFixed(2)})</small>`;
+            };
             tbody.innerHTML = '';
 
-            // Use current scoring mode so Top 20 reflects custom weights in real-time
+            // Use current scoring mode and show all MSAs with contribution details.
             const sorted = getSortedMSAsByCurrentScore();
 
-            sorted.slice(0, 20).forEach((msa, index) => {
+            const getAdjustedContributionBreakdown = (msa) => {
+                const rawEconomic = (msa.Economic_Index || 0) * (currentWeights.economic || 0);
+                const rawStability = (msa.Stability_Index || 0) * (currentWeights.stability || 0);
+                const rawSupply = (msa.Supply_Index || 0) * (currentWeights.supply || 0);
+                const rawPricing = (msa.Pricing_Index || 0) * (currentWeights.pricing || 0);
+                const rawValuation = (msa.Valuation_Index || 0) * (currentWeights.valuation || 0);
+                const rawRegulatory = (msa.Regulatory_Index || 0) * (currentWeights.regulatory || 0);
+                const rawTotal = rawEconomic + rawStability + rawSupply + rawPricing + rawValuation + rawRegulatory;
+                const adjustedScore = getCurrentDisplayScore(msa);
+
+                if (rawTotal <= 1e-12) {
+                    return {
+                        economic: 0,
+                        stability: 0,
+                        supply: 0,
+                        pricing: 0,
+                        valuation: 0,
+                        regulatory: 0
+                    };
+                }
+
+                // Allocate adjusted score proportionally by each raw contribution,
+                // so six contributions always sum to the adjusted total score.
+                return {
+                    economic: adjustedScore * (rawEconomic / rawTotal),
+                    stability: adjustedScore * (rawStability / rawTotal),
+                    supply: adjustedScore * (rawSupply / rawTotal),
+                    pricing: adjustedScore * (rawPricing / rawTotal),
+                    valuation: adjustedScore * (rawValuation / rawTotal),
+                    regulatory: adjustedScore * (rawRegulatory / rawTotal)
+                };
+            };
+
+            const adjustedBreakdowns = sorted.map(msa => ({
+                msa,
+                breakdown: getAdjustedContributionBreakdown(msa)
+            }));
+
+            const getMaxAdjusted = (key) => adjustedBreakdowns.reduce((maxVal, item) => {
+                const value = item.breakdown[key] || 0;
+                return value > maxVal ? value : maxVal;
+            }, 0);
+
+            setContributionHeader('thEconomicContribution', 'Economic Contribution', currentWeights.economic || 0, getMaxAdjusted('economic'));
+            setContributionHeader('thStabilityContribution', 'Affordability Contribution', currentWeights.stability || 0, getMaxAdjusted('stability'));
+            setContributionHeader('thSupplyContribution', 'Supply Contribution', currentWeights.supply || 0, getMaxAdjusted('supply'));
+            setContributionHeader('thPricingContribution', 'Pricing Contribution', currentWeights.pricing || 0, getMaxAdjusted('pricing'));
+            setContributionHeader('thValuationContribution', 'Valuation Contribution', currentWeights.valuation || 0, getMaxAdjusted('valuation'));
+            setContributionHeader('thRegulatoryContribution', 'Regulatory Contribution', currentWeights.regulatory || 0, getMaxAdjusted('regulatory'));
+
+            adjustedBreakdowns.forEach(({ msa, breakdown }, index) => {
                 const displayScore = getCurrentDisplayScore(msa);
                 const row = document.createElement('tr');
                 row.innerHTML = `
@@ -3042,6 +3104,12 @@
                     <td><strong>${msa.msa_name}</strong></td>
                     <td>${formatNumber(msa.Total_Population)}</td>
                     <td><strong style="color: #667eea;">${displayScore.toFixed(2)}</strong></td>
+                    <td>${(breakdown.economic || 0).toFixed(2)}</td>
+                    <td>${(breakdown.stability || 0).toFixed(2)}</td>
+                    <td>${(breakdown.supply || 0).toFixed(2)}</td>
+                    <td>${(breakdown.pricing || 0).toFixed(2)}</td>
+                    <td>${(breakdown.valuation || 0).toFixed(2)}</td>
+                    <td>${(breakdown.regulatory || 0).toFixed(2)}</td>
                     <td>
                         <button onclick="showMSADetail(${msa.msa_code})">View</button>
                         <button onclick="openRezoningReportForMSA(${msa.msa_code})">Rezoning Intel</button>
@@ -3281,24 +3349,8 @@
             const total = economic + stability + supply + pricing + valuation + regulatory;
             document.getElementById('totalWeight').textContent = total + '%';
 
-            if (!applyChanges) {
-                if (messageEl) {
-                    messageEl.style.display = 'none';
-                }
-                return;
-            }
-
-            if (total !== 100) {
-                if (messageEl && showStatusMessage) {
-                    messageEl.textContent = 'Please ensure index weights sum to 100%.';
-                    messageEl.className = 'normalize-validation-message error';
-                    messageEl.style.display = 'block';
-                } else if (messageEl) {
-                    messageEl.style.display = 'none';
-                }
-                return;
-            }
-
+            // Always sync currentWeights to sliders for fully dynamic table/score updates.
+            // We keep the validation message for UX, but do not block recalculation.
             currentWeights = {
                 economic: economic / 100,
                 stability: stability / 100,
@@ -3308,18 +3360,30 @@
                 regulatory: regulatory / 100
             };
 
-            if (messageEl && showStatusMessage) {
-                messageEl.textContent = 'MSA Investment Ranking Updated.';
-                messageEl.className = 'normalize-validation-message success';
-                messageEl.style.display = 'block';
-            } else if (messageEl) {
-                messageEl.style.display = 'none';
-            }
-            
             calculateScores();
             renderScoringTable();
             renderOverviewView();
             updateStats();
+
+            if (!applyChanges) {
+                if (messageEl) {
+                    messageEl.style.display = 'none';
+                }
+                return;
+            }
+
+            if (messageEl && showStatusMessage) {
+                if (total === 100) {
+                    messageEl.textContent = 'MSA Investment Ranking Updated.';
+                    messageEl.className = 'normalize-validation-message success';
+                } else {
+                    messageEl.textContent = 'Weights applied dynamically. Current total is not 100%.';
+                    messageEl.className = 'normalize-validation-message error';
+                }
+                messageEl.style.display = 'block';
+            } else if (messageEl) {
+                messageEl.style.display = 'none';
+            }
         }
 
         // ===================================================================
