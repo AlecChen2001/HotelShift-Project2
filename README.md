@@ -1,5 +1,5 @@
 # MSA Investment Potential Analyzer — Project Handbook
-
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Open%20App-gold?style=for-the-badge)](https://alecchen2001.github.io/HotelShift-Project2/?v=9e314ae)
 ---
 
 ## Table of Contents
