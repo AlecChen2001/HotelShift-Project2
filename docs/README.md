@@ -1,5 +1,10 @@
 # MSA Investment Ranking Web Application
 
+## Rezone Intel Prompt Guide
+
+For client-facing prompt edits in Rezone Intel Generator, see:
+- `Rezone_Intel_Prompt_Maintenance_Guide.md`
+
 A professional, interactive **100% static HTML** web dashboard for analyzing US Metropolitan Statistical Areas (MSAs) investment potential. Perfect for GitHub Pages deployment! 🎉
 
 ## ✨ Features
